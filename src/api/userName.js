@@ -8,7 +8,7 @@ export const handleUserNameFetchRequest = async (req, res) => {
   try {
     userId = await verifyUserToken(userToken)
   } catch (err) {
-    console.error(err, 'User token is invalid')
+    console.error('User token is invalid', err)
     res.status(400).json({ error: 'invalid', errors: { userToken: err } })
     return
   }
