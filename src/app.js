@@ -6,7 +6,6 @@ import cors from 'cors'
 import bodyParser from 'body-parser'
 import { initDb } from './database/dbInterface'
 import { handleLoginRequest } from './api/login'
-import RateLimiter from './utils/RateLimiter'
 import cookieParser from 'cookie-parser'
 import { handleUserNameFetchRequest } from './api/userName'
 
@@ -18,10 +17,8 @@ app.use(bodyParser.json())
 app.use(expressValidator())
 app.use(cookieParser())
 
-const rateLimiter = new RateLimiter()
-
 app.post('/sign_up', handleSignUpRequest)
-app.post('/login', handleLoginRequest(rateLimiter))
+app.post('/login', handleLoginRequest)
 app.post('/my_user_name', handleUserNameFetchRequest)
 
 const httpServer = http.createServer(app)

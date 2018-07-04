@@ -1,10 +1,11 @@
 import { checkPasswordHash } from '../utils/hash'
-import { getUserByEmail } from '../database/dbInterface'
+import { getSessionFailuresCount, getUserByEmail, isSessionBlocked } from '../database/dbInterface'
 import { signUserToken } from '../utils/tokens'
+import { blockSessionFor30Seconds, updateSessionFailuresCount } from '../utils/rateLimit'
 
 const MAX_LOGIN_FAILURES_PER_MINUTE = 5
 
-export const handleLoginRequest = rateLimiter => async (req, res) => {
+export const handleLoginRequest = async (req, res) => {
   const sessionId = req.cookies.sessionId
 
   if (!sessionId) {
@@ -13,15 +14,15 @@ export const handleLoginRequest = rateLimiter => async (req, res) => {
     return
   }
 
-  if (await rateLimiter.isSessionBlocked(sessionId)) {
+  if (isSessionBlocked(sessionId)) {
     console.error('Error logging in - Session is blocked')
     res.status(400).json({ error: 'limit_exceeded' })
     return
   }
 
-  if (await rateLimiter.getSessionFailuresCount(sessionId) >= MAX_LOGIN_FAILURES_PER_MINUTE) {
+  if (getSessionFailuresCount(sessionId) >= MAX_LOGIN_FAILURES_PER_MINUTE) {
     console.error('Error logging in - Too many login failures from session')
-    await rateLimiter.blockSessionFor2Minutes(sessionId)
+    blockSessionFor30Seconds(sessionId)
     res.status(400).json({ error: 'limit_exceeded' })
     return
   }
@@ -31,14 +32,14 @@ export const handleLoginRequest = rateLimiter => async (req, res) => {
 
   if (!user) {
     console.error('Error logging in - Email does not exist')
-    await rateLimiter.incrementSessionFailuresCount(sessionId)
+    await updateSessionFailuresCount(sessionId)
     res.status(400).json({ error: 'invalid_email' })
     return
   }
 
   if (!user.passwordHash || !await checkPasswordHash(req.body.password, user.passwordHash)) {
     console.error('Error logging in - Incorrect password')
-    await rateLimiter.incrementSessionFailuresCount(sessionId)
+    await updateSessionFailuresCount(sessionId)
     res.status(400).json({ error: 'invalid_password' })
     return
   }
