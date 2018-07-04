@@ -1,8 +1,12 @@
 import shortid from 'shortid'
-
 const low = require('lowdb')
 const FileSync = require('lowdb/adapters/FileSync')
 let db
+
+/*
+* This module contains a set of functions that
+* are used for communication with the database
+*/
 
 export const initDb = () => {
   const adapter = new FileSync('db.json')

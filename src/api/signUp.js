@@ -3,6 +3,7 @@ import { createUser } from '../database/dbInterface'
 import { signUserToken } from '../utils/tokens'
 
 export const handleSignUpRequest = async (req, res) => {
+  // Verify validity of all the entered fields
   req.checkBody({
     email: { isEmail: true },
     password: { isLength: { options: { min: 8 } } },
@@ -27,6 +28,7 @@ export const handleSignUpRequest = async (req, res) => {
     return
   }
 
+  // Respond with the newly generated user token
   console.log({ userId }, 'User created')
   res.json({ userToken: signUserToken(userId) })
 }
